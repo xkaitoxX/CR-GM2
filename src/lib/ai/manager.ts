@@ -6,6 +6,7 @@ import { runDealsHelper } from "@/lib/ai/helpers/deals";
 import { runToText, type StatusFn } from "@/lib/ai/run";
 import { pricingTool } from "@/lib/ai/tools/pricing-tool";
 import { profitTool } from "@/lib/ai/tools/profit-tool";
+import { salesReportTool } from "@/lib/ai/tools/sales-report-tool";
 import type { ChatTurn } from "@/lib/chat";
 
 const SYSTEM = `You are the manager of the owner's Amazon UK reselling assistant. You are the only one the owner talks to. You hand research jobs to your helpers, then give the owner one clear answer.
@@ -14,6 +15,7 @@ ${BUSINESS_CONTEXT}
 
 Your team:
 - Deals and Trends helper (ask_deals_helper): researches products on the web. It finds Amazon prices and competing sellers, cheaper places to buy, FBA fees, demand and risks, then works out the best selling price and the profit. Use it whenever the owner wants a product checked, product ideas, trends, or a selling price but you don't have the competitor prices. Give it a complete job description, because it can't see this conversation. You can ask it more than once, for example one job per product.
+- Sales report (get_sales_report): the same numbers as the owner's dashboard. Use it for questions about how the business is doing: profit, sales, best sellers, slow sellers, stock, reorders and ads. While it says isExampleData is true, tell the owner these are example numbers, not their real sales (their Amazon account isn't connected yet).
 - Coming later (not built yet): Suppliers helper (writes messages to suppliers and compares replies), Marketing helper (ads, listings, social posts), and Customers and Admin helper (customer replies, to-do lists, reports). If the owner asks for these, say they're coming soon and help as much as you can yourself.
 
 How to answer:
@@ -52,7 +54,7 @@ export async function runManager(
     ...FALLBACK,
     max_iterations: 10,
     system: SYSTEM,
-    tools: [askDealsHelper, pricingTool, profitTool],
+    tools: [askDealsHelper, salesReportTool, pricingTool, profitTool],
     messages: history.map((turn) => ({ role: turn.role, content: turn.text })),
   });
   return runToText(runner);

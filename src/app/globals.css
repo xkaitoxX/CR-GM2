@@ -7,6 +7,42 @@
 
 :root {
   color-scheme: light dark;
+
+  /* Chart colours: a colour-blind-safe set checked against the white cards. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --viz-grid: #e4e4e7;
+  --viz-axis: #d4d4d8;
+  --viz-muted: #71717a;
+
+  /* Status colours always come with an icon and a label. */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --delta-good: #006300;
+  --delta-bad: #b42323;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Same hues, stepped for the dark cards. */
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --viz-grid: #27272a;
+    --viz-axis: #3f3f46;
+    --viz-muted: #a1a1aa;
+    --delta-good: #2fbf2f;
+    --delta-bad: #f07a7a;
+  }
 }
 
 /* Assistant replies are written in Markdown. */

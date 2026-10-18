@@ -17,7 +17,12 @@ describe("runManager", () => {
     expect(calls[0].model).toBe(MODEL);
     expect(calls[0].fallbacks).toBe("default");
     expect(calls[0].betas).toContain("server-side-fallback-2026-07-01");
-    expect(toolNames(calls[0].tools)).toEqual(["ask_deals_helper", "suggest_price", "calculate_profit"]);
+    expect(toolNames(calls[0].tools)).toEqual([
+      "ask_deals_helper",
+      "get_sales_report",
+      "suggest_price",
+      "calculate_profit",
+    ]);
     expect(calls[0].messages).toEqual([{ role: "user", content: "Hi" }]);
   });
 

@@ -8,6 +8,7 @@ import { PASSWORD_HEADER, type ChatEvent, type ChatTurn } from "@/lib/chat";
 const PASSWORD_KEY = "seller-assistant-password";
 
 const SUGGESTIONS = [
+  "How is my business doing this month? What should I reorder?",
   "Find me 3 items I could buy for under £10 and resell on Amazon UK",
   "Is this a good deal? Joseph Joseph garlic press, £6 in the shop",
   "What products are trending in the UK right now that I could resell?",
@@ -112,8 +113,9 @@ export default function AssistantChat() {
           <div className="rounded-2xl bg-white p-5 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
             <h2 className="font-semibold">Hi! I&apos;m your manager.</h2>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Tell me a product to check, or ask me to find deals or trends. My Deals and Trends helper does the
-              research, and I give you the answer with the profit worked out. I never buy or send anything for you.
+              Tell me a product to check, ask me to find deals or trends, or ask how your sales are going. My Deals
+              and Trends helper does the research, and I give you the answer with the profit and selling price
+              worked out. I never buy or send anything for you.
             </p>
             <div className="mt-4 flex flex-col gap-2">
               {SUGGESTIONS.map((s) => (

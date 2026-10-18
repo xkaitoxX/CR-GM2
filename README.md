@@ -8,6 +8,13 @@ The full plan is in [docs/business-plan.md](docs/business-plan.md).
 
 - **Assistant** (`/`): chat with the **manager** agent. Ask it to check a product, find deals or spot trends. The manager hands research to the **Deals and Trends helper**, which searches the web for Amazon prices, competing sellers, cheaper places to buy, FBA fees, demand and risks.
 - **Price suggestions:** the agents work out **what price to sell at**. That price competes with other sellers (it matches the Buy Box or the lowest FBA offer rather than starting a price war) and still makes a profit. They also give the lowest price that's still a good deal and the break-even price, and they warn when Amazon sells the item itself, the listing is crowded, or competitors are below your break-even price.
+- **Dashboard** (`/dashboard`): shows how the business is doing over the last 7, 30 or 90 days.
+  - Key numbers (profit, sales, items sold, profit per item, return on money, stock at Amazon), each compared with the period before.
+  - "What needs your attention": items to reorder, ads losing money, slow sellers, the top earner and the best seller.
+  - Charts of profit, sales or items sold per day or week, profit by item, and where the sales money goes.
+  - A sortable table of every item, showing how many days of stock it has left.
+
+  It shows **example data** until the Amazon seller account is connected. The manager reads the same numbers (`get_sales_report`), so you can ask it things like "what should I reorder?"
 - **Profit calculator** (`/calculator`): the same maths the agents use, for trying your own numbers.
 
 The agents research and advise only. They never buy, pay or send anything.
@@ -27,6 +34,7 @@ The agents research and advise only. They never buy, pay or send anything.
 - `src/lib/ai/tools/profit-tool.ts` and `pricing-tool.ts`: the profit calculator and price suggester as tools, so agents never do the maths or pick prices themselves.
 - `src/lib/profit.ts`: the profit maths (Amazon fees, VAT, return, break-even, lowest good-deal price).
 - `src/lib/pricing.ts`: picks a competitive, profitable selling price from competitors' offers.
+- `src/lib/business/`: products, sales and ad spend (`types.ts`), the example data and the one place to plug in real Amazon data (`example-data.ts`), and the dashboard numbers and alerts (`summary.ts`).
 - `src/app/api/chat/route.ts`: runs the manager and streams progress to the chat page.
 
 All agents use Claude Opus 5.5 through the Anthropic TypeScript SDK's tool runner, with server-side refusal fallback turned on.
