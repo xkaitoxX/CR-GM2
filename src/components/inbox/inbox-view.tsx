@@ -39,6 +39,7 @@ export default function InboxView() {
       </div>
 
       <AutoReplySwitch settings={settings} onChange={inbox.reload} />
+      {emailConnected && <CheckEmailButton onChecked={inbox.reload} />}
 
       <Tabs
         label="Inbox sections"
@@ -106,6 +107,50 @@ function AutoReplySwitch({ settings, onChange }: { settings: Settings; onChange:
         </span>
       </span>
     </label>
+  );
+}
+
+interface SyncResult {
+  newEmails: number;
+  customerMessages: number;
+  repliedAutomatically: number;
+  ticketsOpened: number;
+  supplierEmails: number;
+}
+
+function CheckEmailButton({ onChecked }: { onChecked: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState("");
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        className={quietButton}
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setResult("");
+          try {
+            const r = await send<SyncResult>("/api/email/sync", "POST", {});
+            setResult(
+              r.newEmails
+                ? `${r.newEmails} new: ${r.customerMessages} from customers (${r.repliedAutomatically} answered, ${r.ticketsOpened} to Tickets), ${r.supplierEmails} from suppliers.`
+                : "No new emails.",
+            );
+            onChecked();
+          } catch {
+            setResult("Couldn't check email. Check the email address and app password in the website's settings.");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? "Checking email…" : "Check email now"}
+      </button>
+      <span className="text-sm text-zinc-600 dark:text-zinc-400" aria-live="polite">
+        {result}
+      </span>
+    </div>
   );
 }
 

@@ -8,8 +8,17 @@ import { PASSWORD_HEADER } from "@/lib/chat";
 export function isAuthorised(request: Request): boolean {
   const expected = process.env.APP_PASSWORD;
   if (!expected) return process.env.NODE_ENV !== "production";
+  return sameText(request.headers.get(PASSWORD_HEADER) ?? "", expected);
+}
 
-  const given = Buffer.from(request.headers.get(PASSWORD_HEADER) ?? "");
-  const wanted = Buffer.from(expected);
-  return given.length === wanted.length && timingSafeEqual(given, wanted);
+/** Scheduled jobs (Vercel Cron or another pinger) send `Authorization: Bearer <CRON_SECRET>`. */
+export function isScheduledJob(request: Request): boolean {
+  const secret = process.env.CRON_SECRET;
+  return Boolean(secret) && sameText(request.headers.get("authorization") ?? "", `Bearer ${secret}`);
+}
+
+function sameText(given: string, wanted: string) {
+  const a = Buffer.from(given);
+  const b = Buffer.from(wanted);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
