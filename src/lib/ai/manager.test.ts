@@ -20,6 +20,7 @@ describe("runManager", () => {
       "ask_deals_helper",
       "ask_marketing_helper",
       "ask_suppliers_helper",
+      "ask_customers_helper",
       "get_sales_report",
       "suggest_price",
       "calculate_profit",

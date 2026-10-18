@@ -20,11 +20,22 @@ export interface Store {
 
 export const DEFAULT_LIST_LIMIT = 200;
 
-/** Sortable unique id: newer ids sort after older ones. */
-export const newId = () => `${Date.now().toString(36).padStart(9, "0")}-${crypto.randomUUID().slice(0, 8)}`;
+let lastTime = 0;
+let sameTimeCount = 0;
+
+/** Sortable unique id: newer ids sort after older ones, even within the same millisecond. */
+export function newId() {
+  const now = Date.now();
+  sameTimeCount = now === lastTime ? sameTimeCount + 1 : 0;
+  lastTime = now;
+  return `${now.toString(36).padStart(9, "0")}${sameTimeCount.toString(36).padStart(3, "0")}-${crypto.randomUUID().slice(0, 8)}`;
+}
 
 export function createMemoryStore(now = () => new Date().toISOString()): Store {
   const collections = new Map<string, Map<string, StoredRecord<unknown>>>();
+  // Order of saves, so records saved in the same millisecond still list newest first.
+  const saveOrder = new Map<StoredRecord<unknown>, number>();
+  let saves = 0;
   const records = (collection: string) => {
     let c = collections.get(collection);
     if (!c) collections.set(collection, (c = new Map()));
@@ -38,17 +49,21 @@ export function createMemoryStore(now = () => new Date().toISOString()): Store {
     },
     async list<T>(collection: string, limit = DEFAULT_LIST_LIMIT) {
       return ([...records(collection).values()] as StoredRecord<T>[])
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || b.id.localeCompare(a.id))
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || saveOrder.get(b)! - saveOrder.get(a)!)
         .slice(0, limit);
     },
     async put<T>(collection: string, id: string, data: T) {
       const existing = records(collection).get(id);
       const time = now();
       const record = { id, data, createdAt: existing?.createdAt ?? time, updatedAt: time };
+      if (existing) saveOrder.delete(existing);
+      saveOrder.set(record, saves++);
       records(collection).set(id, record);
       return record;
     },
     async remove(collection: string, id: string) {
+      const existing = records(collection).get(id);
+      if (existing) saveOrder.delete(existing);
       records(collection).delete(id);
     },
   };

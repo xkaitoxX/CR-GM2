@@ -2,6 +2,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { BUSINESS_CONTEXT, modelParams } from "@/lib/ai/config";
+import { CUSTOMERS_HELPER } from "@/lib/ai/helpers/customers";
 import { DEALS_HELPER } from "@/lib/ai/helpers/deals";
 import { runHelper, type HelperSpec } from "@/lib/ai/helpers/run-helper";
 import { MARKETING_HELPER } from "@/lib/ai/helpers/marketing";
@@ -20,6 +21,7 @@ Your team:
 - Deals helper (ask_deals_helper): checks specific products or links on the web: Amazon price and competing sellers, cheaper places to buy, FBA fee, demand and risks, then the best selling price and profit.
 - Marketing helper (ask_marketing_helper): finds trending and best-selling items and suggests a basket to buy within a budget (a small test buy first), works out what to restock, checks upcoming UK seasons (Christmas, Black Friday, Prime Day...), writes Amazon listings, works out ad budgets and keywords, and writes social posts.
 - Suppliers helper (ask_suppliers_helper): writes messages to suppliers (Alibaba and others), and compares supplier replies on the real cost per item in the UK, including shipping, customs duty and import VAT, with red flags.
+- Customers and Admin helper (ask_customers_helper): writes polite customer replies that follow Amazon's rules, the owner's to-do list (tickets due, reorders, seasons), and monthly reports. Customer messages that arrive by email are answered automatically in the Inbox; anything that needs the owner becomes a ticket in Tickets.
 - Sales report (get_sales_report): the same numbers as the owner's dashboard. Use it for questions about how the business is doing: profit, sales, best sellers, slow sellers, stock, reorders and ads. While it says isExampleData is true, tell the owner these are example numbers, not their real sales (their Amazon account isn't connected yet).
 - Helpers can't see this conversation, so give each one a complete job description: product names, links, prices, pasted supplier replies and anything the owner said that matters. You can ask a helper more than once, for example one job per product.
 
@@ -74,6 +76,13 @@ export async function runManager(
       "ask_suppliers_helper",
       "Ask the Suppliers helper to write a message to a supplier, or to compare supplier replies (paste them in full). Returns its report.",
       SUPPLIERS_HELPER,
+    ),
+    helperTool(
+      client,
+      onStatus,
+      "ask_customers_helper",
+      "Ask the Customers and Admin helper to draft a customer reply (paste the message), write today's to-do list, or write a monthly report. Returns its report.",
+      CUSTOMERS_HELPER,
     ),
   ];
 

@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import PasswordForm from "@/components/password-form";
 import { PASSWORD_HEADER, type ChatEvent, type ChatTurn } from "@/lib/chat";
-
-const PASSWORD_KEY = "seller-assistant-password";
+import { readPassword } from "@/lib/client-api";
 
 const SUGGESTIONS = [
   "How is my business doing this month? What should I reorder?",
@@ -15,22 +15,6 @@ const SUGGESTIONS = [
 ];
 
 type Notice = { kind: "password" } | { kind: "not_configured" } | { kind: "error"; text: string } | null;
-
-function readPassword() {
-  try {
-    return localStorage.getItem(PASSWORD_KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function savePassword(password: string) {
-  try {
-    localStorage.setItem(PASSWORD_KEY, password);
-  } catch {
-    // Private browsing: the password lasts until the page is closed.
-  }
-}
 
 export default function AssistantChat() {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
@@ -172,9 +156,8 @@ export default function AssistantChat() {
 
         {notice?.kind === "password" && (
           <PasswordForm
-            onSave={(value) => {
+            onSaved={(value) => {
               password.current = value;
-              savePassword(value);
               retry();
             }}
           />
@@ -239,34 +222,5 @@ function NoticeBox({ children }: { children: React.ReactNode }) {
     <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-600/20 dark:bg-amber-950 dark:text-amber-100">
       {children}
     </div>
-  );
-}
-
-function PasswordForm({ onSave }: { onSave: (password: string) => void }) {
-  const [value, setValue] = useState("");
-  return (
-    <form
-      className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-600/20 dark:bg-amber-950 dark:text-amber-100"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (value) onSave(value);
-      }}
-    >
-      <label htmlFor="app-password" className="block font-medium">
-        Enter the website password to use the assistant
-      </label>
-      <div className="mt-2 flex gap-2">
-        <input
-          id="app-password"
-          type="password"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="min-w-0 flex-1 rounded-lg bg-white px-3 py-2 text-zinc-900 ring-1 ring-amber-600/30 outline-none"
-        />
-        <button type="submit" className="rounded-lg bg-amber-900 px-3 py-2 font-medium text-white">
-          Unlock
-        </button>
-      </div>
-    </form>
   );
 }

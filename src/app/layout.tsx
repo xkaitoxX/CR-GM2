@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import NavLinks from "@/components/nav-links";
+import { Suspense } from "react";
+import NavLinks, { NavLinksPlain } from "@/components/nav-links";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,7 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
             <span className="font-semibold">Seller Assistant</span>
-            <NavLinks />
+            <Suspense fallback={<NavLinksPlain />}>
+              <NavLinks />
+            </Suspense>
           </div>
         </header>
         {children}

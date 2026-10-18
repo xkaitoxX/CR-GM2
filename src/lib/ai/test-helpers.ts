@@ -31,6 +31,24 @@ export class FakeRunner implements AgentRunner {
   }
 }
 
+/** A client whose structured-output calls (`beta.messages.parse`) return the given answers in turn. */
+export function fakeParseClient(...outputs: (object | null | Error)[]) {
+  const calls: Record<string, unknown>[] = [];
+  const client = {
+    beta: {
+      messages: {
+        parse: async (params: Record<string, unknown>) => {
+          calls.push(params);
+          const output = outputs[calls.length - 1] ?? null;
+          if (output instanceof Error) throw output;
+          return { parsed_output: output, stop_reason: output ? "end_turn" : "refusal" };
+        },
+      },
+    },
+  } as unknown as Anthropic;
+  return { client, calls };
+}
+
 /** A client whose tool runner answers each call with the next list of messages. */
 export function fakeClient(...replies: BetaMessage[][]) {
   const calls: BetaToolRunnerParams[] = [];
