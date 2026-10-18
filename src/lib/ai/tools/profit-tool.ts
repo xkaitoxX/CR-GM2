@@ -2,8 +2,8 @@ import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { calculateProfit, DEFAULT_INPUTS, type ProfitInputs } from "@/lib/profit";
 
-const money = (n: number) => Math.round(n * 100) / 100;
-const pct = (n: number) => Math.round(n * 10) / 10;
+export const money = (n: number) => Math.round(n * 100) / 100;
+export const pct = (n: number) => Math.round(n * 10) / 10;
 
 const optionalMoney = (description: string) => z.number().min(0).optional().describe(description);
 
@@ -33,12 +33,17 @@ export const profitInputSchema = z.object({
   quantity: z.number().int().min(1).optional().describe(`How many items to buy. Default ${DEFAULT_INPUTS.quantity}`),
 });
 
-/** Runs the profit maths and returns a compact summary for an agent to read. */
-export function profitSummary(args: z.infer<typeof profitInputSchema>) {
-  const inputs: ProfitInputs = {
+/** Fills in typical values for anything the agent left out. */
+export function withDefaults<T extends Partial<ProfitInputs>>(args: T) {
+  return {
     ...DEFAULT_INPUTS,
     ...Object.fromEntries(Object.entries(args).filter(([, v]) => v !== undefined)),
-  };
+  } as ProfitInputs;
+}
+
+/** Runs the profit maths and returns a compact summary for an agent to read. */
+export function profitSummary(args: z.infer<typeof profitInputSchema>) {
+  const inputs = withDefaults(args);
   const r = calculateProfit(inputs);
 
   return {

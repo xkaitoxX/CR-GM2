@@ -52,6 +52,8 @@ export interface ProfitResult {
   roiPercent: number;
   /** Lowest sell price that still breaks even. Null if no price can. */
   breakEvenSellPrice: number | null;
+  /** Lowest sell price that is still a good deal. Null if no price can be. */
+  goodDealSellPrice: number | null;
   totalInvestment: number;
   totalProfit: number;
   verdict: Verdict;
@@ -116,10 +118,14 @@ export function calculateProfit(inputs: ProfitInputs): ProfitResult {
   const r = profitAt(inputs, inputs.sellPrice);
   const costPerUnit = r.productCost + r.extraCosts;
 
-  // Profit rises in a straight line with the sell price, so two points give the break-even.
+  // Profit rises in a straight line with the sell price, so two points give any target price.
   const profitAtZero = profitAt(inputs, 0).profit;
   const slope = profitAt(inputs, 1).profit - profitAtZero;
-  const breakEvenSellPrice = slope > 0 ? -profitAtZero / slope : null;
+  const priceForProfit = (profit: number) => (slope > 0 ? (profit - profitAtZero) / slope : null);
+  const breakEvenSellPrice = priceForProfit(0);
+  const goodDealSellPrice = priceForProfit(
+    Math.max(GOOD_DEAL_MIN_PROFIT, (costPerUnit * GOOD_DEAL_MIN_ROI_PERCENT) / 100),
+  );
 
   const roiPercent = costPerUnit > 0 ? (r.profit / costPerUnit) * 100 : 0;
   const verdict: Verdict =
@@ -145,8 +151,23 @@ export function calculateProfit(inputs: ProfitInputs): ProfitResult {
     marginPercent: inputs.sellPrice > 0 ? (r.profit / inputs.sellPrice) * 100 : 0,
     roiPercent,
     breakEvenSellPrice,
+    goodDealSellPrice,
     totalInvestment: costPerUnit * inputs.quantity,
     totalProfit: r.profit * inputs.quantity,
     verdict,
   };
+}
+
+/** Highest buy price that is still a good deal at the given sell price. Null if none is. */
+export function maxBuyPriceForGoodDeal(inputs: ProfitInputs): number | null {
+  // Profit falls in a straight line as the buy price rises.
+  const free = profitAt({ ...inputs, buyPrice: 0 }, inputs.sellPrice);
+  const costPerPound = free.profit - profitAt({ ...inputs, buyPrice: 1 }, inputs.sellPrice).profit;
+  const roi = GOOD_DEAL_MIN_ROI_PERCENT / 100;
+
+  // profit >= minimum profit, and profit >= roi * (product cost + extra costs)
+  const forProfit = (free.profit - GOOD_DEAL_MIN_PROFIT) / costPerPound;
+  const forRoi = (free.profit - roi * free.extraCosts) / (costPerPound * (1 + roi));
+  const max = Math.min(forProfit, forRoi);
+  return max >= 0 ? max : null;
 }

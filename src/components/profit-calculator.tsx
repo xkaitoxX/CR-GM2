@@ -210,9 +210,12 @@ export default function ProfitCalculator() {
             <Stat label="Return on money" value={percent(r.roiPercent)} />
             <Stat label="Profit margin" value={percent(r.marginPercent)} />
             <Stat
-              label="Lowest Amazon price before you lose money"
+              label="Lowest price for a good deal"
+              value={r.goodDealSellPrice === null ? "None" : gbp.format(Math.ceil(r.goodDealSellPrice * 100) / 100)}
+            />
+            <Stat
+              label="Lowest price before a loss"
               value={r.breakEvenSellPrice === null ? "None" : gbp.format(r.breakEvenSellPrice)}
-              wide
             />
           </dl>
         </div>
@@ -327,9 +330,9 @@ function Checkbox({
   );
 }
 
-function Stat({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/60 ${wide ? "col-span-2" : ""}`}>
+    <div className="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/60">
       <dt className="text-zinc-600 dark:text-zinc-400">{label}</dt>
       <dd className="mt-0.5 text-lg font-semibold tabular-nums">{value}</dd>
     </div>

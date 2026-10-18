@@ -17,7 +17,7 @@ describe("runManager", () => {
     expect(calls[0].model).toBe(MODEL);
     expect(calls[0].fallbacks).toBe("default");
     expect(calls[0].betas).toContain("server-side-fallback-2026-07-01");
-    expect(toolNames(calls[0].tools)).toEqual(["ask_deals_helper", "calculate_profit"]);
+    expect(toolNames(calls[0].tools)).toEqual(["ask_deals_helper", "suggest_price", "calculate_profit"]);
     expect(calls[0].messages).toEqual([{ role: "user", content: "Hi" }]);
   });
 
@@ -40,7 +40,7 @@ describe("runManager", () => {
 
     expect(report).toBe("Good deal: £3.99 profit per item.");
     expect(calls[1].messages).toEqual([{ role: "user", content: "Check the Joseph Joseph garlic press" }]);
-    expect(toolNames(calls[1].tools)).toEqual(["web_search", "calculate_profit"]);
+    expect(toolNames(calls[1].tools)).toEqual(["web_search", "suggest_price", "calculate_profit"]);
     expect(statuses).toEqual([
       "Asking the Deals and Trends helper",
       "Deals helper searched: garlic press amazon uk price",
