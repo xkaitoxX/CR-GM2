@@ -1,11 +1,11 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import type { BetaMessage } from "@anthropic-ai/sdk/resources/beta/messages/messages";
-import { BUSINESS_CONTEXT, FALLBACK, MODEL } from "@/lib/ai/config";
-import { runToText, type StatusFn } from "@/lib/ai/run";
+import { BUSINESS_CONTEXT, webSearchTool } from "@/lib/ai/config";
+import { runHelper, type HelperSpec } from "@/lib/ai/helpers/run-helper";
+import type { StatusFn } from "@/lib/ai/run";
 import { pricingTool } from "@/lib/ai/tools/pricing-tool";
 import { profitTool } from "@/lib/ai/tools/profit-tool";
 
-const SYSTEM = `You are the Deals and Trends helper for a small Amazon UK reselling business. The manager gives you a research job, usually checking a product or finding product ideas. Your report goes back to the manager, not straight to the owner.
+const SYSTEM = `You are the Deals helper for a small Amazon UK reselling business. The manager asks you to check specific products or links. Your report goes back to the manager, not straight to the owner.
 
 ${BUSINESS_CONTEXT}
 
@@ -27,41 +27,19 @@ Your report:
 - Say clearly which numbers are estimates and what the owner should check before buying.
 Keep it short and factual.`;
 
-const WEB_SEARCH = {
-  type: "web_search_20260209",
-  name: "web_search",
-  max_uses: 8,
-  user_location: { type: "approximate", country: "GB" },
-} as const;
+export const DEALS_HELPER: HelperSpec = {
+  name: "Deals helper",
+  system: SYSTEM,
+  tools: [webSearchTool(8), pricingTool, profitTool],
+  effort: "medium",
+  maxIterations: 12,
+  toolStatus: {
+    [profitTool.name]: "is calculating the profit",
+    [pricingTool.name]: "is working out the best selling price",
+  },
+};
 
-function reportProgress(message: BetaMessage, onStatus: StatusFn) {
-  for (const block of message.content) {
-    if (block.type === "server_tool_use" && block.name === "web_search") {
-      const query = typeof block.input.query === "string" ? block.input.query : "";
-      onStatus(query ? `Deals helper searched: ${query}` : "Deals helper is searching the web");
-    } else if (block.type === "tool_use" && block.name === profitTool.name) {
-      onStatus("Deals helper is calculating the profit");
-    } else if (block.type === "tool_use" && block.name === pricingTool.name) {
-      onStatus("Deals helper is working out the best selling price");
-    }
-  }
-}
-
-/** Runs the Deals and Trends helper on one research job and returns its report. */
-export async function runDealsHelper(
-  client: Anthropic,
-  task: string,
-  onStatus: StatusFn = () => {},
-): Promise<string> {
-  const runner = client.beta.messages.toolRunner({
-    model: MODEL,
-    max_tokens: 16000,
-    output_config: { effort: "medium" },
-    ...FALLBACK,
-    max_iterations: 12,
-    system: SYSTEM,
-    tools: [WEB_SEARCH, pricingTool, profitTool],
-    messages: [{ role: "user", content: task }],
-  });
-  return runToText(runner, (message) => reportProgress(message, onStatus));
+/** Runs the Deals helper on one product check and returns its report. */
+export function runDealsHelper(client: Anthropic, task: string, onStatus: StatusFn = () => {}) {
+  return runHelper(client, DEALS_HELPER, task, onStatus);
 }

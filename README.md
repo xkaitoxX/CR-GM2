@@ -41,7 +41,7 @@ The agents research and advise only. They never buy, pay or send anything.
 - `src/lib/business/`: products, sales and ad spend (`types.ts`), the example data and the one place to plug in real Amazon data (`example-data.ts`), and the dashboard numbers and alerts (`summary.ts`).
 - `src/app/api/chat/route.ts`: runs the manager and streams progress to the chat page.
 
-All agents use Claude Opus 5.5 through the Anthropic TypeScript SDK's tool runner, with server-side refusal fallback turned on.
+All agents use Claude Haiku 5.5, the cheapest Claude model, through the Anthropic TypeScript SDK's tool runner. Set `AI_MODEL` (for example `claude-sonnet-5-5`) to use a stronger model; refusal fallback switches on automatically for models that support it.
 
 ## Switching on the AI
 

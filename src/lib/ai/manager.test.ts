@@ -7,7 +7,7 @@ import { fakeClient, fakeMessage, textMessage } from "./test-helpers";
 const toolNames = (tools: unknown[]) => tools.map((t) => (t as { name: string }).name);
 
 describe("runManager", () => {
-  it("sends the conversation to the manager with its tools and the refusal fallback", async () => {
+  it("sends the conversation to the manager with its tools on the cheap model", async () => {
     const { client, calls } = fakeClient([textMessage("Hello! What should I check?")]);
 
     const reply = await runManager(client, [{ role: "user", text: "Hi" }]);
@@ -15,8 +15,7 @@ describe("runManager", () => {
     expect(reply).toBe("Hello! What should I check?");
     expect(calls).toHaveLength(1);
     expect(calls[0].model).toBe(MODEL);
-    expect(calls[0].fallbacks).toBe("default");
-    expect(calls[0].betas).toContain("server-side-fallback-2026-07-01");
+    expect(calls[0].output_config).toEqual({ effort: "medium" });
     expect(toolNames(calls[0].tools)).toEqual([
       "ask_deals_helper",
       "get_sales_report",
@@ -47,7 +46,7 @@ describe("runManager", () => {
     expect(calls[1].messages).toEqual([{ role: "user", content: "Check the Joseph Joseph garlic press" }]);
     expect(toolNames(calls[1].tools)).toEqual(["web_search", "suggest_price", "calculate_profit"]);
     expect(statuses).toEqual([
-      "Asking the Deals and Trends helper",
+      "Asking the Deals helper",
       "Deals helper searched: garlic press amazon uk price",
     ]);
   });
