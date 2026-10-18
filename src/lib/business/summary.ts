@@ -39,7 +39,18 @@ export interface ProductRow {
   stockAtAmazon: number;
   /** At the last 30 days' pace. Null when nothing sold. */
   daysOfStockLeft: number | null;
+  /** £ current Amazon selling price. */
+  price: number;
+  imageUrl?: string;
+  /** Items sold in each of the period's buckets, for a mini chart. */
+  trend: number[];
+  /** Change in items sold against the previous period. Null when nothing sold before. */
+  unitsChangePercent: number | null;
+  /** Badges. They follow the same rules as the alerts. */
+  tags: ProductTag[];
 }
+
+export type ProductTag = "topEarner" | "bestSeller" | "lowStock" | "slowSeller" | "adsLosing";
 
 export interface Bucket {
   start: string;
@@ -62,6 +73,8 @@ export interface Insight {
   severity: "critical" | "warning" | "good" | "info";
   title: string;
   text: string;
+  /** Set when the alert is about one item. */
+  productId?: string;
 }
 
 export interface DashboardSummary {
@@ -156,11 +169,13 @@ export function summarise(data: BusinessData, days: PeriodDays): DashboardSummar
     const start = i === 0 ? from : addDays(end, -(width - 1));
     return { start, end, label: formatDay(start), sales: 0, profit: 0, units: 0, tally: emptyTally() };
   });
-  const bucketFor = (date: string) => buckets.find((b) => date >= b.start && date <= b.end)!;
+  const bucketIndex = (date: string) => buckets.findIndex((b) => date >= b.start && date <= b.end);
 
   const current = emptyTally();
   const previous = emptyTally();
   const byProduct = new Map(data.products.map((p) => [p.id, emptyTally()]));
+  const previousByProduct = new Map(data.products.map((p) => [p.id, emptyTally()]));
+  const trends = new Map(data.products.map((p) => [p.id, new Array<number>(bucketCount).fill(0)]));
   const unitsLast30 = new Map<string, number>();
 
   for (const sale of data.sales) {
@@ -184,11 +199,16 @@ export function summarise(data: BusinessData, days: PeriodDays): DashboardSummar
       t.vatOnSales += r.outputVat * sale.units;
       t.shippingPrep += r.extraCosts * sale.units;
     };
-    if (inPrevious) add(previous);
+    if (inPrevious) {
+      add(previous);
+      add(previousByProduct.get(product.id)!);
+    }
     if (inCurrent) {
+      const bucket = bucketIndex(sale.date);
       add(current);
       add(byProduct.get(product.id)!);
-      add(bucketFor(sale.date).tally);
+      add(buckets[bucket].tally);
+      trends.get(product.id)![bucket] += sale.units;
     }
   }
 
@@ -198,14 +218,23 @@ export function summarise(data: BusinessData, days: PeriodDays): DashboardSummar
     if (ad.date >= from && ad.date <= to) {
       current.adSpend += ad.amount;
       byProduct.get(ad.productId)!.adSpend += ad.amount;
-      bucketFor(ad.date).tally.adSpend += ad.amount;
+      buckets[bucketIndex(ad.date)].tally.adSpend += ad.amount;
     }
   }
 
   const rows: ProductRow[] = data.products
     .map((p) => {
       const t = toTotals(byProduct.get(p.id)!);
-      const dailyUnits = (unitsLast30.get(p.id) ?? 0) / 30;
+      const unitsBefore = previousByProduct.get(p.id)!.units;
+      const sold30 = unitsLast30.get(p.id) ?? 0;
+      const daysOfStockLeft = sold30 > 0 ? p.stockAtAmazon / (sold30 / 30) : null;
+      const lowStock = daysOfStockLeft !== null && daysOfStockLeft < LOW_STOCK_DAYS;
+      const tags: ProductTag[] = [];
+      if (lowStock) tags.push("lowStock");
+      if (sold30 <= SLOW_SELLER_UNITS_PER_30_DAYS && p.stockAtAmazon >= SLOW_SELLER_MIN_STOCK && !lowStock) {
+        tags.push("slowSeller");
+      }
+      if (t.adSpend > 0 && t.profit < 0) tags.push("adsLosing");
       return {
         id: p.id,
         name: p.name,
@@ -216,10 +245,20 @@ export function summarise(data: BusinessData, days: PeriodDays): DashboardSummar
         marginPercent: t.sales > 0 ? (t.profit / t.sales) * 100 : 0,
         adSpend: t.adSpend,
         stockAtAmazon: p.stockAtAmazon,
-        daysOfStockLeft: dailyUnits > 0 ? p.stockAtAmazon / dailyUnits : null,
+        daysOfStockLeft,
+        price: p.price,
+        imageUrl: p.imageUrl,
+        trend: trends.get(p.id)!,
+        unitsChangePercent: unitsBefore > 0 ? ((t.units - unitsBefore) / unitsBefore) * 100 : null,
+        tags,
       };
     })
     .sort((a, b) => b.profit - a.profit);
+
+  const top = rows[0];
+  if (top && top.profit > 0) top.tags.unshift("topEarner");
+  const popular = [...rows].sort((a, b) => b.units - a.units)[0];
+  if (popular && popular.units > 0) popular.tags.unshift("bestSeller");
 
   const totals = toTotals(current);
   const previousTotals = toTotals(previous);
@@ -254,7 +293,7 @@ export function summarise(data: BusinessData, days: PeriodDays): DashboardSummar
     breakdown,
     stockUnits: data.products.reduce((n, p) => n + p.stockAtAmazon, 0),
     stockValue: data.products.reduce((n, p) => n + p.stockAtAmazon * p.buyPrice, 0),
-    insights: findInsights(days, totals, previousTotals, rows, unitsLast30),
+    insights: findInsights(days, totals, previousTotals, rows, popular, unitsLast30),
   };
 }
 
@@ -265,33 +304,35 @@ function findInsights(
   totals: Totals,
   previous: Totals,
   rows: ProductRow[],
+  popular: ProductRow | undefined,
   unitsLast30: Map<string, number>,
 ): Insight[] {
   const insights: Insight[] = [];
 
   for (const row of rows) {
-    if (row.daysOfStockLeft !== null && row.daysOfStockLeft < LOW_STOCK_DAYS) {
-      const daysLeft = Math.max(1, Math.round(row.daysOfStockLeft));
+    if (row.tags.includes("lowStock")) {
+      const daysLeft = Math.max(1, Math.round(row.daysOfStockLeft!));
       insights.push({
-        severity: row.daysOfStockLeft < VERY_LOW_STOCK_DAYS ? "critical" : "warning",
+        severity: row.daysOfStockLeft! < VERY_LOW_STOCK_DAYS ? "critical" : "warning",
         title: `Reorder ${row.name}`,
         text: `About ${daysLeft} day${daysLeft === 1 ? "" : "s"} of stock left at Amazon (${row.stockAtAmazon} items). Running out hurts your ranking.`,
+        productId: row.id,
       });
     }
-    if (row.adSpend > 0 && row.profit < 0) {
+    if (row.tags.includes("adsLosing")) {
       insights.push({
         severity: "critical",
         title: `Ads on ${row.name} are losing money`,
         text: `You spent ${gbp(row.adSpend)} on ads and the item made a ${gbp(-row.profit)} loss after ads. Lower the ad budget or pause the ads.`,
+        productId: row.id,
       });
     }
-    const sold30 = unitsLast30.get(row.id) ?? 0;
-    const lowStock = row.daysOfStockLeft !== null && row.daysOfStockLeft < LOW_STOCK_DAYS;
-    if (sold30 <= SLOW_SELLER_UNITS_PER_30_DAYS && row.stockAtAmazon >= SLOW_SELLER_MIN_STOCK && !lowStock) {
+    if (row.tags.includes("slowSeller")) {
       insights.push({
         severity: "warning",
         title: `${row.name} is selling slowly`,
-        text: `Only ${sold30} sold in the last 30 days, with ${row.stockAtAmazon} still in stock. Try a lower price, or stop restocking it.`,
+        text: `Only ${unitsLast30.get(row.id) ?? 0} sold in the last 30 days, with ${row.stockAtAmazon} still in stock. Try a lower price, or stop restocking it.`,
+        productId: row.id,
       });
     }
   }
@@ -314,14 +355,15 @@ function findInsights(
       severity: "good",
       title: `Top earner: ${top.name}`,
       text: `Made ${gbp(top.profit)} profit (${Math.round((top.profit / totals.profit) * 100)}% of the total) from ${top.units} sold.`,
+      productId: top.id,
     });
   }
-  const popular = [...rows].sort((a, b) => b.units - a.units)[0];
   if (popular && popular.units > 0 && popular.id !== top?.id) {
     insights.push({
       severity: "info",
       title: `Best seller: ${popular.name}`,
       text: `${popular.units} sold, more than any other item.`,
+      productId: popular.id,
     });
   }
 

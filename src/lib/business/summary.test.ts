@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { addDays } from "./dates";
 import { exampleData, EXAMPLE_AS_OF } from "./example-data";
@@ -8,8 +9,8 @@ const data: BusinessData = {
   asOf: "2026-01-31",
   isExample: false,
   products: [
-    { id: "a", name: "Garlic press", buyPrice: 6, fulfilmentFee: 2.5, stockAtAmazon: 1 },
-    { id: "b", name: "Phone stand", buyPrice: 4, fulfilmentFee: 2.2, stockAtAmazon: 20 },
+    { id: "a", name: "Garlic press", buyPrice: 6, fulfilmentFee: 2.5, stockAtAmazon: 1, price: 16.99, imageUrl: "/products/a.webp" },
+    { id: "b", name: "Phone stand", buyPrice: 4, fulfilmentFee: 2.2, stockAtAmazon: 20, price: 9.99 },
   ],
   sales: [
     { date: "2026-01-31", productId: "a", units: 2, unitPrice: 16.99 },
@@ -76,6 +77,22 @@ describe("summarise", () => {
     expect(s.insights[1].text).toMatch(/About 8 days of stock left/);
   });
 
+  it("gives each item a mini trend and its change in items sold", () => {
+    const [a, b] = s.products;
+
+    expect(a.trend).toEqual([1, 0, 0, 0, 0, 0, 2]);
+    expect(b.trend).toEqual([0, 0, 0, 0, 0, 1, 0]);
+    expect(a.unitsChangePercent).toBe(200);
+    expect(b.unitsChangePercent).toBeNull();
+    expect(a).toMatchObject({ price: 16.99, imageUrl: "/products/a.webp" });
+  });
+
+  it("gives items badges that match the alerts", () => {
+    expect(s.products[0].tags).toEqual(["bestSeller", "topEarner", "lowStock"]);
+    expect(s.products[1].tags).toEqual(["slowSeller", "adsLosing"]);
+    expect(s.insights.map((i) => i.productId)).toEqual(["b", "a", "b", undefined, "a"]);
+  });
+
   it("values the stock at Amazon at what it cost", () => {
     expect(s.stockUnits).toBe(21);
     expect(s.stockValue).toBe(86);
@@ -102,6 +119,12 @@ describe("example data", () => {
     expect(exampleData()).toEqual(a);
     expect(a.sales.every((s) => s.date <= EXAMPLE_AS_OF)).toBe(true);
     expect(new Set(a.sales.map((s) => s.productId)).size).toBe(a.products.length);
+  });
+
+  it("only points to product photos that exist", () => {
+    for (const p of exampleData().products) {
+      if (p.imageUrl) expect(existsSync(`public${p.imageUrl}`), p.imageUrl).toBe(true);
+    }
   });
 
   it("shows the kinds of alerts the dashboard is for", () => {

@@ -7,7 +7,6 @@ export const EXAMPLE_AS_OF = "2026-10-17";
 const DAYS = 180;
 
 interface ExampleProduct extends Product {
-  listPrice: number;
   /** Average units sold per day at the start and at the end of the period. */
   startRate: number;
   endRate: number;
@@ -16,14 +15,14 @@ interface ExampleProduct extends Product {
 }
 
 const PRODUCTS: ExampleProduct[] = [
-  { id: "garlic-press", name: "Garlic press", buyPrice: 6, fulfilmentFee: 2.5, stockAtAmazon: 34, listPrice: 16.99, startRate: 1.1, endRate: 2 },
-  { id: "cable-box", name: "Cable organiser box", buyPrice: 4.2, fulfilmentFee: 2.2, stockAtAmazon: 52, listPrice: 12.99, startRate: 2.2, endRate: 2.6 },
-  { id: "baking-mats", name: "Silicone baking mats (2)", buyPrice: 5.5, fulfilmentFee: 2.6, stockAtAmazon: 9, listPrice: 14.99, startRate: 1.2, endRate: 1.6 },
-  { id: "drawer-organiser", name: "Bamboo drawer organiser", buyPrice: 7.5, fulfilmentFee: 3.1, stockAtAmazon: 21, listPrice: 21.99, startRate: 0.8, endRate: 0.9 },
-  { id: "water-bottle", name: "Kids' water bottle", buyPrice: 3.8, fulfilmentFee: 2.4, stockAtAmazon: 30, listPrice: 11.49, startRate: 1.4, endRate: 0.8 },
-  { id: "coffee-cup", name: "Reusable coffee cup", buyPrice: 5, fulfilmentFee: 2.5, stockAtAmazon: 4, listPrice: 13.99, startRate: 0.6, endRate: 0.9 },
-  { id: "reading-light", name: "LED reading light", buyPrice: 7.2, fulfilmentFee: 2.4, stockAtAmazon: 25, listPrice: 14.99, startRate: 0.5, endRate: 0.4, adsPerDay: 2.5 },
-  { id: "phone-stand", name: "Aluminium phone stand", buyPrice: 4, fulfilmentFee: 2.2, stockAtAmazon: 38, listPrice: 9.99, startRate: 0.12, endRate: 0.06 },
+  { id: "garlic-press", name: "Garlic press", buyPrice: 6, fulfilmentFee: 2.5, stockAtAmazon: 34, price: 16.99, startRate: 1.1, endRate: 2 },
+  { id: "cable-box", name: "Cable organiser box", buyPrice: 4.2, fulfilmentFee: 2.2, stockAtAmazon: 52, price: 12.99, startRate: 2.2, endRate: 2.6 },
+  { id: "baking-mats", name: "Silicone baking mats (2)", buyPrice: 5.5, fulfilmentFee: 2.6, stockAtAmazon: 9, price: 14.99, startRate: 1.2, endRate: 1.6 },
+  { id: "drawer-organiser", name: "Bamboo drawer organiser", buyPrice: 7.5, fulfilmentFee: 3.1, stockAtAmazon: 21, price: 21.99, startRate: 0.8, endRate: 0.9 },
+  { id: "water-bottle", name: "Kids' water bottle", buyPrice: 3.8, fulfilmentFee: 2.4, stockAtAmazon: 30, price: 11.49, startRate: 1.4, endRate: 0.8 },
+  { id: "coffee-cup", name: "Reusable coffee cup", buyPrice: 5, fulfilmentFee: 2.5, stockAtAmazon: 4, price: 13.99, startRate: 0.6, endRate: 0.9 },
+  { id: "reading-light", name: "LED reading light", buyPrice: 7.2, fulfilmentFee: 2.4, stockAtAmazon: 25, price: 14.99, startRate: 0.5, endRate: 0.4, adsPerDay: 2.5 },
+  { id: "phone-stand", name: "Aluminium phone stand", buyPrice: 4, fulfilmentFee: 2.2, stockAtAmazon: 38, price: 9.99, startRate: 0.12, endRate: 0.06 },
 ];
 
 /** Small seeded random number generator, so the example data is the same on every visit. */
@@ -59,19 +58,13 @@ export function exampleData(): BusinessData {
       const units = poisson(rate, random);
       // Now and then the price moves a little to match competitors.
       const priceNudge = random() < 0.15 ? -0.5 : 0;
-      if (units > 0) sales.push({ date, productId: p.id, units, unitPrice: p.listPrice + priceNudge });
+      if (units > 0) sales.push({ date, productId: p.id, units, unitPrice: p.price + priceNudge });
       if (p.adsPerDay) adSpend.push({ date, productId: p.id, amount: p.adsPerDay });
     }
   }
 
   return {
-    products: PRODUCTS.map(({ id, name, buyPrice, fulfilmentFee, stockAtAmazon }) => ({
-      id,
-      name,
-      buyPrice,
-      fulfilmentFee,
-      stockAtAmazon,
-    })),
+    products: PRODUCTS.map(({ startRate, endRate, adsPerDay, ...product }) => product),
     sales,
     adSpend,
     asOf: EXAMPLE_AS_OF,

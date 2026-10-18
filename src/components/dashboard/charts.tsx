@@ -156,11 +156,32 @@ export function ColumnChart({
   );
 }
 
+/** A tiny line chart with no axes, for a row or card. Hidden from screen readers; show the numbers as text too. */
+export function Sparkline({ values, width = 96, height = 32 }: { values: number[]; width?: number; height?: number }) {
+  if (values.length === 0) return null;
+  const pad = 5; // room for the end dot and its ring
+  const max = Math.max(...values, 1);
+  const x = (i: number) => (values.length === 1 ? width - pad : pad + (i * (width - pad * 2)) / (values.length - 1));
+  const y = (v: number) => height - pad - (v / max) * (height - pad * 2);
+  const line = values.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+  const last = values.length - 1;
+
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden className="shrink-0">
+      <polygon points={`${x(0)},${height - pad} ${line} ${x(last)},${height - pad}`} fill="var(--series-1)" opacity={0.1} />
+      <polyline points={line} fill="none" stroke="var(--series-1)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={x(last)} cy={y(values[last])} r={4} fill="var(--series-1)" stroke="var(--viz-surface)" strokeWidth={2} />
+    </svg>
+  );
+}
+
 export interface BarDatum {
   key: string;
   label: string;
   value: number;
   note?: string;
+  /** Drawn to the left of the label when given. */
+  image?: React.ReactNode;
 }
 
 /** Horizontal bars with the value at each bar's tip. Negative values extend left of zero. */
@@ -176,20 +197,23 @@ export function BarList({ data, format }: { data: BarDatum[]; format: (n: number
         const width = (Math.abs(d.value) / range) * 100;
         const negative = d.value < 0;
         return (
-          <li key={d.key}>
-            <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="truncate">{d.label}</span>
-              <span className="shrink-0 font-medium tabular-nums">
-                {format(d.value)}
-                {d.note && <span className="ml-1 font-normal text-zinc-500 dark:text-zinc-400">{d.note}</span>}
-              </span>
-            </div>
-            <div className="relative mt-1 h-3">
-              {lo < 0 && <div className="absolute inset-y-[-2px] w-px bg-[var(--viz-axis)]" style={{ left: `${zero}%` }} />}
-              <div
-                className={`absolute inset-y-0 ${negative ? "rounded-l-[4px] bg-[var(--status-critical)]" : "rounded-r-[4px] bg-[var(--series-1)]"}`}
-                style={negative ? { right: `${100 - zero}%`, width: `${width}%` } : { left: `${zero}%`, width: `${width}%` }}
-              />
+          <li key={d.key} className="flex items-center gap-3">
+            {d.image}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="truncate">{d.label}</span>
+                <span className="shrink-0 font-medium tabular-nums">
+                  {format(d.value)}
+                  {d.note && <span className="ml-1 font-normal text-zinc-500 dark:text-zinc-400">{d.note}</span>}
+                </span>
+              </div>
+              <div className="relative mt-1 h-3">
+                {lo < 0 && <div className="absolute inset-y-[-2px] w-px bg-[var(--viz-axis)]" style={{ left: `${zero}%` }} />}
+                <div
+                  className={`absolute inset-y-0 ${negative ? "rounded-l-[4px] bg-[var(--status-critical)]" : "rounded-r-[4px] bg-[var(--series-1)]"}`}
+                  style={negative ? { right: `${100 - zero}%`, width: `${width}%` } : { left: `${zero}%`, width: `${width}%` }}
+                />
+              </div>
             </div>
           </li>
         );

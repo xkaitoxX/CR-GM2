@@ -18,6 +18,8 @@
   --viz-grid: #e4e4e7;
   --viz-axis: #d4d4d8;
   --viz-muted: #71717a;
+  /* Card background, used for the ring around chart dots. */
+  --viz-surface: #ffffff;
 
   /* Status colours always come with an icon and a label. */
   --status-good: #0ca30c;
@@ -40,6 +42,7 @@
     --viz-grid: #27272a;
     --viz-axis: #3f3f46;
     --viz-muted: #a1a1aa;
+    --viz-surface: #18181b;
     --delta-good: #2fbf2f;
     --delta-bad: #f07a7a;
   }

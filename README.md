@@ -12,7 +12,11 @@ The full plan is in [docs/business-plan.md](docs/business-plan.md).
   - Key numbers (profit, sales, items sold, profit per item, return on money, stock at Amazon), each compared with the period before.
   - "What needs your attention": items to reorder, ads losing money, slow sellers, the top earner and the best seller.
   - Charts of profit, sales or items sold per day or week, profit by item, and where the sales money goes.
-  - A sortable table of every item, showing how many days of stock it has left.
+  - **Your items**, with a picture beside every item and a **List / Cards** switch.
+    - **List:** like a crypto app, each row has a picture, a mini sales chart, and ▲/▼ % against the previous period. On phones it becomes compact rows.
+    - **Cards:** like a clothing shop, each card has a big photo, price, profit per item, number sold, stock left, and badges such as "Best seller", "Low stock" or "Ads losing money".
+    - Both views sort by popularity, profit, trend or stock running out.
+  - Item pictures also appear in "Profit by item" and beside alerts. An item without a photo shows its initials on a coloured tile. Real photos come from the Amazon catalogue (`m.media-amazon.com` is already allowed in `next.config.ts`), or from files in `public/products/` for the example items.
 
   It shows **example data** until the Amazon seller account is connected. The manager reads the same numbers (`get_sales_report`), so you can ask it things like "what should I reorder?"
 - **Profit calculator** (`/calculator`): the same maths the agents use, for trying your own numbers.

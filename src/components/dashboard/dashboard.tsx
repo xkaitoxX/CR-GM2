@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { BarList, ColumnChart, StackedBar, type SegmentDatum } from "@/components/dashboard/charts";
+import Delta from "@/components/dashboard/delta";
+import ItemsSection from "@/components/dashboard/items";
+import ProductImage from "@/components/dashboard/product-image";
 import { formatDay } from "@/lib/business/dates";
 import {
-  LOW_STOCK_DAYS,
   PERIODS,
-  VERY_LOW_STOCK_DAYS,
   type BreakdownKey,
   type DashboardSummary,
   type Insight,
@@ -43,6 +44,7 @@ export default function Dashboard({ summaries }: { summaries: Record<PeriodDays,
   const s = summaries[days];
   const m = METRICS.find((x) => x.key === metric)!;
   const vs = `vs previous ${days} days`;
+  const productsById = new Map(s.products.map((p) => [p.id, p]));
 
   return (
     <div className="space-y-6">
@@ -104,7 +106,11 @@ export default function Dashboard({ summaries }: { summaries: Record<PeriodDays,
           </div>
           <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {s.insights.map((insight) => (
-              <InsightRow key={insight.title} insight={insight} />
+              <InsightRow
+                key={insight.title}
+                insight={insight}
+                product={insight.productId ? productsById.get(insight.productId) : undefined}
+              />
             ))}
           </ul>
         </section>
@@ -155,6 +161,7 @@ export default function Dashboard({ summaries }: { summaries: Record<PeriodDays,
               label: p.name,
               value: p.profit,
               note: p.profit < 0 ? "loss" : undefined,
+              image: <ProductImage name={p.name} src={p.imageUrl} size={32} />,
             }))}
           />
         </section>
@@ -178,7 +185,7 @@ export default function Dashboard({ summaries }: { summaries: Record<PeriodDays,
         </section>
       </div>
 
-      <ProductsTable rows={s.products} />
+      <ItemsSection rows={s.products} />
     </div>
   );
 }
@@ -204,20 +211,13 @@ function StatTile({
   note?: string;
   hero?: boolean;
 }) {
-  const amount = change ? ("percent" in change ? change.percent : change.points) : 0;
-  const up = amount >= 0;
   return (
     <div className={`${card} ${hero ? "col-span-2 lg:col-span-1" : ""}`}>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">{label}</p>
       <p className={`mt-1 font-semibold ${hero ? "text-4xl" : "text-2xl"}`}>{value}</p>
       {change && (
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          <span className={`font-medium ${up ? "text-[var(--delta-good)]" : "text-[var(--delta-bad)]"}`}>
-            <span aria-hidden>{up ? "▲" : "▼"}</span> {up ? "+" : "−"}
-            {Math.abs(amount).toFixed(0)}
-            {"percent" in change ? "%" : " pts"}
-          </span>{" "}
-          {vs}
+          {"percent" in change ? <Delta value={change.percent} /> : <Delta value={change.points} unit=" pts" />} {vs}
         </p>
       )}
       {note && <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{note}</p>}
@@ -232,10 +232,10 @@ const SEVERITY: Record<Insight["severity"], { label: string; color: string; icon
   info: { label: "Note", color: "var(--viz-muted)", icon: <path d="M8 7.5V11M8 5h.01" /> },
 };
 
-function InsightRow({ insight }: { insight: Insight }) {
+function InsightRow({ insight, product }: { insight: Insight; product?: ProductRow }) {
   const severity = SEVERITY[insight.severity];
   return (
-    <li className="flex gap-3 py-3 first:pt-0 last:pb-0">
+    <li className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
       <svg viewBox="0 0 16 16" className="mt-0.5 size-5 shrink-0" aria-hidden>
         <circle cx="8" cy="8" r="7.5" fill={severity.color} />
         <g stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none">
@@ -249,101 +249,11 @@ function InsightRow({ insight }: { insight: Insight }) {
         </p>
         <p className="text-zinc-600 dark:text-zinc-400">{insight.text}</p>
       </div>
-    </li>
-  );
-}
-
-type SortKey = "name" | "units" | "sales" | "profit" | "profitPerItem" | "marginPercent" | "daysOfStockLeft";
-
-const COLUMNS: { key: SortKey; label: string; numeric: boolean }[] = [
-  { key: "name", label: "Item", numeric: false },
-  { key: "units", label: "Sold", numeric: true },
-  { key: "sales", label: "Sales", numeric: true },
-  { key: "profit", label: "Profit", numeric: true },
-  { key: "profitPerItem", label: "Per item", numeric: true },
-  { key: "marginPercent", label: "Margin", numeric: true },
-  { key: "daysOfStockLeft", label: "Stock left", numeric: true },
-];
-
-function ProductsTable({ rows }: { rows: ProductRow[] }) {
-  const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: "units", desc: true });
-  const sorted = [...rows].sort((a, b) => {
-    const av = a[sort.key] ?? Infinity;
-    const bv = b[sort.key] ?? Infinity;
-    const order = typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number);
-    return sort.desc ? -order : order;
-  });
-
-  return (
-    <section className={card} aria-labelledby="items-title">
-      <h2 id="items-title" className="font-semibold">
-        All items
-      </h2>
-      <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">Most popular first. Tap a heading to sort.</p>
-      {/* `relative` keeps the hidden screen-reader labels inside the scroll box. */}
-      <div className="relative -mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead>
-            <tr className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-              {COLUMNS.map((c) => (
-                <th
-                  key={c.key}
-                  scope="col"
-                  aria-sort={sort.key === c.key ? (sort.desc ? "descending" : "ascending") : undefined}
-                  className={`py-2 font-medium ${c.numeric ? "text-right" : "text-left"}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSort((s) => ({ key: c.key, desc: s.key === c.key ? !s.desc : c.numeric }))
-                    }
-                    className="hover:text-zinc-900 dark:hover:text-zinc-100"
-                  >
-                    {c.label}
-                    {sort.key === c.key && <span aria-hidden> {sort.desc ? "↓" : "↑"}</span>}
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="tabular-nums">
-            {sorted.map((p) => (
-              <tr key={p.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
-                <th scope="row" className="py-2 pr-3 text-left font-normal">
-                  {p.name}
-                </th>
-                <td className="py-2 text-right">{units(p.units)}</td>
-                <td className="py-2 text-right">{money(p.sales)}</td>
-                <td className={`py-2 text-right ${p.profit < 0 ? "text-[var(--delta-bad)]" : ""}`}>{money(p.profit)}</td>
-                <td className="py-2 text-right">{money(p.profitPerItem)}</td>
-                <td className="py-2 text-right">{percent(p.marginPercent)}</td>
-                <td className="py-2 text-right">
-                  <StockCell row={p} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function StockCell({ row }: { row: ProductRow }) {
-  const days = row.daysOfStockLeft;
-  const severity = days === null ? null : days < VERY_LOW_STOCK_DAYS ? "critical" : days < LOW_STOCK_DAYS ? "warning" : null;
-  const daysText = days === null ? "no recent sales" : days > 365 ? "1 year+" : `${Math.round(days)} days`;
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-      {severity && (
-        <span
-          className="size-2 rounded-full"
-          style={{ background: `var(--status-${severity})` }}
-          aria-hidden
-        />
+      {product && (
+        <div className="ml-auto">
+          <ProductImage name={product.name} src={product.imageUrl} size={36} />
+        </div>
       )}
-      {units(row.stockAtAmazon)} <span className="text-zinc-500 dark:text-zinc-400">· {daysText}</span>
-      {severity && <span className="sr-only">{severity === "critical" ? "(reorder now)" : "(reorder soon)"}</span>}
-    </span>
+    </li>
   );
 }

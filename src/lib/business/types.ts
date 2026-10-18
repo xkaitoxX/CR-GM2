@@ -10,6 +10,10 @@ export interface Product {
   fulfilmentFee: number;
   /** Units waiting in Amazon's warehouse. */
   stockAtAmazon: number;
+  /** £ current Amazon selling price. */
+  price: number;
+  /** Product photo: a file in /public or an Amazon image URL. */
+  imageUrl?: string;
 }
 
 export interface Sale {
