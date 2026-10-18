@@ -18,6 +18,18 @@ Your limits:
 
 The website will be a **new project, separate from Atlas**.
 
+### Changes since this plan was approved
+- **Cheaper AI:** every agent uses **Claude Haiku 5.5**, the cheapest Claude model, instead of Opus 5.5. The model is one setting (`AI_MODEL`).
+- **Customer replies without your OK:** simple customer messages and normal feedback get a polite reply by themselves. Anything risky (refunds, damage, complaints, safety, negative feedback, or anything the AI isn't sure about) becomes a **ticket**. The customer gets a holding reply, and you get an email with a link to the ticket. A switch on the Inbox page turns automatic replies off.
+- **Email connection:** the website reads the shop's inbox (Amazon buyer messages arrive by email) and replies from it.
+- **Item fact sheets:** the AI only answers customers from facts you've written about each item.
+- **Import costs:** supplier offers are compared on the real cost delivered to the UK, including freight, duty, clearance and import VAT.
+- **Baskets and seasons:** the Marketing helper suggests a test or scale basket of items to buy, restock lists, and stock deadlines for UK seasons.
+- **Today card:** a daily plan at the top of the dashboard, with a short note from the manager.
+- **Repository:** for now the website lives in the CR-GM2 repository.
+
+Where the sections below say customer messages need your approval, the change above replaces that. Buying, paying, ads and supplier messages still need you.
+
 ---
 
 ## The idea in plain words
@@ -65,7 +77,7 @@ That's **about 90% back** on the £6 you spent. Buy 10 and you make about £54. 
 | Feature | What it does |
 |---|---|
 | **Ads helper** | AI writes **ad text** and **product listing text** (title, bullet points, description) and **social media posts**. For Amazon ads it suggests keywords and a daily budget, then shows **whether each ad is making or losing money**. It suggests pausing the losers, and you approve. |
-| **Reviews and customers** | Requests a review after each order, automatically, using Amazon's own allowed button. AI writes draft replies to customer messages and you approve them. |
+| **Reviews and customers** | Requests a review after each order, automatically, using Amazon's own allowed button. AI replies to simple customer messages by itself and sends anything risky to you as a ticket. |
 
 ### Part D: Manage
 | Feature | What it does |
@@ -142,23 +154,24 @@ Everyone reads and writes **the same database**, so helpers don't need to pass l
 - Built with Anthropic's official TypeScript SDK and hosted with the website. No extra platforms.
 
 **AI costs:**
-- **Default model:** Claude Opus 5.5, Anthropic's current main model, for the manager and all helpers.
-- **Rough cost** at side-project use: about **£20–£50 a month** with Opus 5.5 everywhere.
-- **Option to save money (your choice):** use a cheaper Claude model (Sonnet 5.5 or Haiku 5.5) for simple helper jobs, such as pulling facts out of supplier replies. That could bring it down to about **£5–£20 a month**. We'd test that the quality stays good first.
+- **Model:** Claude Haiku 5.5, the cheapest Claude model, for the manager and all helpers. A stronger model can be chosen with one setting.
+- **Rough cost** at side-project use: **a few pounds a month**. Most of it is web searches (about 1p each) when helpers research products.
 - Set a **monthly spending limit** in your Anthropic account so the bill can never surprise you.
 
 ### What runs by itself and what needs your OK
 | Runs automatically | Needs your approval | Never automatic |
 |---|---|---|
-| Updating prices, sales and stock | Sending any message (suppliers, customers) | Buying stock |
+| Updating prices, sales and stock | Messages to suppliers | Buying stock |
 | Trend and low-stock alerts | Publishing ads or listings | Payments |
 | Review requests | Pausing ads or lowering ad budgets | Raising ad spending |
-| Daily to-do list | | |
+| Daily to-do list | Risky customer issues (they become tickets) | |
+| Replies to simple customer messages and normal feedback | | |
 
 ### Limits to know about
 - **Alibaba:** as far as I know, outside tools can't send messages for buyers, and robots can get your account blocked. So the website **writes** the message and you paste it and press send. If a supplier gives you an email, the website can send emails for you once you approve them.
 - **Shop prices:** we only use sources that allow it, such as official product feeds and price-history services, or links you paste in. Copying websites with robots breaks their rules.
 - **Ad pictures:** AI writes the words. For pictures we use your product photos with ready-made templates.
+- **Reviews and feedback:** Amazon doesn't allow public replies to product reviews. Feedback replies are written by the AI, but you post them in Seller Central.
 
 ### Technical approach (low cost)
 - Web app: **Next.js + Supabase**, hosted on **Vercel** (free tiers to start). New GitHub repository, separate from Atlas.
@@ -167,7 +180,7 @@ Everyone reads and writes **the same database**, so helpers don't need to pass l
 - **Keepa:** paid, from about €20 a month. Gives price and sales history and powers the trend tracker. Add it once you're buying regularly.
 - **Google Trends:** rising searches.
 - **Claude API:** the manager and 4 helpers, built with the Anthropic TypeScript SDK's Tool Runner. See "How the AI team works" above for models and costs.
-- **Gmail connection** (optional): sending supplier emails you've approved.
+- **Email connection** (Gmail recommended): reading Amazon buyer messages and supplier emails, and sending replies and ticket alerts.
 
 ---
 
@@ -179,7 +192,7 @@ Everyone reads and writes **the same database**, so helpers don't need to pass l
 | Labels, boxes and tape | about £20 |
 | Shipping boxes to Amazon's warehouse | about £10–£20 |
 | Keepa (optional, later) | about €20 a month |
-| Claude AI (manager and helpers) | about £5–£50 a month, depending on use and model choice. Turn on the AI features gradually. |
+| Claude AI (manager and helpers) | a few pounds a month with Claude Haiku 5.5. Set a spending limit in your Anthropic account. |
 | Amazon ads | **only once an item is selling at a profit**, starting at £3–£5 a day |
 
 **Golden rule:** put the profits back into stock until you have about £2,000. Then think about Stage 2, your own brand.
