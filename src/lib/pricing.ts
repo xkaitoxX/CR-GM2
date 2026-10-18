@@ -115,7 +115,7 @@ export function suggestPrices(
 
   const advice =
     recommendation.verdict === "good"
-      ? `Sell at ${gbp(targetPrice)} to match competitors and keep a good profit. Matching is better than undercutting: it avoids a price war, and FBA sellers at the same price take turns winning the Buy Box.`
+      ? `Sell at ${gbp(targetPrice)} to match competitors and keep a good profit. Matching is better than undercutting: it avoids a price war, and FBA sellers at similar prices often share the Buy Box.`
       : `You can match competitors at ${gbp(targetPrice)}, but the profit is thin. ${buyHint}`;
   return { breakEvenPrice, goodDealPrice, options, recommended: recommendation, advice, warnings };
 }
