@@ -8,3 +8,37 @@
 :root {
   color-scheme: light dark;
 }
+
+/* Assistant replies are written in Markdown. */
+@layer components {
+  .markdown {
+    @apply space-y-3 text-[0.95rem] leading-relaxed;
+  }
+  .markdown h1,
+  .markdown h2,
+  .markdown h3 {
+    @apply font-semibold;
+  }
+  .markdown ul {
+    @apply list-disc space-y-1 pl-5;
+  }
+  .markdown ol {
+    @apply list-decimal space-y-1 pl-5;
+  }
+  .markdown a {
+    @apply underline underline-offset-2;
+  }
+  .markdown table {
+    @apply w-full border-collapse text-sm;
+  }
+  .markdown th,
+  .markdown td {
+    @apply border-b border-zinc-200 px-2 py-1.5 text-left dark:border-zinc-800;
+  }
+  .markdown th {
+    @apply font-semibold;
+  }
+  .markdown code {
+    @apply rounded bg-zinc-100 px-1 font-mono text-[0.9em] dark:bg-zinc-800;
+  }
+}
