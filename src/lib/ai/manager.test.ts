@@ -18,6 +18,7 @@ describe("runManager", () => {
     expect(calls[0].output_config).toEqual({ effort: "medium" });
     expect(toolNames(calls[0].tools)).toEqual([
       "ask_deals_helper",
+      "ask_marketing_helper",
       "ask_suppliers_helper",
       "get_sales_report",
       "suggest_price",
@@ -64,5 +65,26 @@ describe("runManager", () => {
     expect(await askSuppliers.run({ task: "Compare Good Co and Risky Ltd" })).toBe("Pick Good Co.");
     expect(toolNames(calls[1].tools)).toEqual(["web_search", "compare_suppliers", "calculate_profit"]);
     expect(statuses).toEqual(["Asking the Suppliers helper"]);
+  });
+
+  it("hands what-to-sell questions to the Marketing helper with its basket tools", async () => {
+    const { client, calls } = fakeClient([textMessage("Done.")], [textMessage("Buy 10 garlic presses.")]);
+
+    await runManager(client, [{ role: "user", text: "Suggest a basket for £200" }]);
+    const askMarketing = calls[0].tools.find(
+      (t) => (t as { name: string }).name === "ask_marketing_helper",
+    ) as BetaRunnableTool<{ task: string }>;
+
+    expect(await askMarketing.run({ task: "Basket for £200" })).toBe("Buy 10 garlic presses.");
+    expect(toolNames(calls[1].tools)).toEqual([
+      "web_search",
+      "plan_basket",
+      "restock_basket",
+      "get_season_calendar",
+      "check_listing",
+      "suggest_ad_budget",
+      "suggest_price",
+      "calculate_profit",
+    ]);
   });
 });

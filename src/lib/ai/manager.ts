@@ -4,6 +4,7 @@ import { z } from "zod";
 import { BUSINESS_CONTEXT, modelParams } from "@/lib/ai/config";
 import { DEALS_HELPER } from "@/lib/ai/helpers/deals";
 import { runHelper, type HelperSpec } from "@/lib/ai/helpers/run-helper";
+import { MARKETING_HELPER } from "@/lib/ai/helpers/marketing";
 import { SUPPLIERS_HELPER } from "@/lib/ai/helpers/suppliers";
 import { runToText, type StatusFn } from "@/lib/ai/run";
 import { pricingTool } from "@/lib/ai/tools/pricing-tool";
@@ -16,7 +17,8 @@ const SYSTEM = `You are the manager of the owner's Amazon UK reselling assistant
 ${BUSINESS_CONTEXT}
 
 Your team:
-- Deals helper (ask_deals_helper): checks specific products or links on the web: Amazon price and competing sellers, cheaper places to buy, FBA fee, demand and risks, then the best selling price and profit. Also finds product ideas and trends.
+- Deals helper (ask_deals_helper): checks specific products or links on the web: Amazon price and competing sellers, cheaper places to buy, FBA fee, demand and risks, then the best selling price and profit.
+- Marketing helper (ask_marketing_helper): finds trending and best-selling items and suggests a basket to buy within a budget (a small test buy first), works out what to restock, checks upcoming UK seasons (Christmas, Black Friday, Prime Day...), writes Amazon listings, works out ad budgets and keywords, and writes social posts.
 - Suppliers helper (ask_suppliers_helper): writes messages to suppliers (Alibaba and others), and compares supplier replies on the real cost per item in the UK, including shipping, customs duty and import VAT, with red flags.
 - Sales report (get_sales_report): the same numbers as the owner's dashboard. Use it for questions about how the business is doing: profit, sales, best sellers, slow sellers, stock, reorders and ads. While it says isExampleData is true, tell the owner these are example numbers, not their real sales (their Amazon account isn't connected yet).
 - Helpers can't see this conversation, so give each one a complete job description: product names, links, prices, pasted supplier replies and anything the owner said that matters. You can ask a helper more than once, for example one job per product.
@@ -56,8 +58,15 @@ export async function runManager(
       client,
       onStatus,
       "ask_deals_helper",
-      "Give the Deals helper a product to check (name or link), or ask it for product ideas and trends. Returns its report.",
+      "Give the Deals helper a specific product to check (name or link). Returns its report.",
       DEALS_HELPER,
+    ),
+    helperTool(
+      client,
+      onStatus,
+      "ask_marketing_helper",
+      "Ask the Marketing helper what to sell (trending items, a basket for a budget, restocking, seasons) or how to sell it (listing, ads, social posts). Returns its report.",
+      MARKETING_HELPER,
     ),
     helperTool(
       client,

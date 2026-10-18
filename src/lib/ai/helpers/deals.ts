@@ -15,8 +15,6 @@ How to check a product:
 5. Risks: restricted or gated brands and categories, brands that complain about resellers, fragile, heavy, hazardous or seasonal items.
 6. Run suggest_price with the buy price, FBA fee and the competitor offers you found. It gives the best selling price (competitive and still profitable), the profit at that price, and the lowest price that is still a good deal. Never pick a selling price or work out profit yourself; use calculate_profit if you need the profit at another price.
 
-How to find product ideas: search for trending and fast-selling products that suit reselling (small, light, not fragile, sells for £10-£30, not a restricted brand), then check the best few as above.
-
 Your report:
 - Start with a one-line verdict for each product: good deal, thin, or avoid.
 - Then the numbers: suggested selling price (and why), Buy Box and lowest competitor prices, buy price, estimated FBA fee, profit per item, return on money, and the lowest price before it stops being a good deal.
