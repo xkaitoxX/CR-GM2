@@ -6,6 +6,7 @@ import { BarList, ColumnChart, StackedBar, type SegmentDatum } from "@/component
 import Delta from "@/components/dashboard/delta";
 import ItemsSection from "@/components/dashboard/items";
 import ProductImage from "@/components/dashboard/product-image";
+import TodayCard from "@/components/dashboard/today-card";
 import { formatDay } from "@/lib/business/dates";
 import {
   PERIODS,
@@ -54,6 +55,8 @@ export default function Dashboard({ summaries }: { summaries: Record<PeriodDays,
           dashboard works. Your real sales appear here once your Amazon seller account is connected.
         </p>
       )}
+
+      <TodayCard summary={summaries[30]} />
 
       {/* One filter row scopes everything below it. */}
       <div className="flex flex-wrap items-center justify-between gap-3">

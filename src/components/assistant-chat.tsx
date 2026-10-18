@@ -8,11 +8,32 @@ import { PASSWORD_HEADER, type ChatEvent, type ChatTurn } from "@/lib/chat";
 import { readPassword } from "@/lib/client-api";
 
 const SUGGESTIONS = [
-  "How is my business doing this month? What should I reorder?",
-  "Find me 3 items I could buy for under £10 and resell on Amazon UK",
+  "What should I do today?",
+  "Suggest a test basket of trending items for £200",
   "Is this a good deal? Joseph Joseph garlic press, £6 in the shop",
-  "What products are trending in the UK right now that I could resell?",
+  "Write a message to an Alibaba supplier asking about silicone baking mats",
+  "How is my business doing this month? What should I restock?",
+  "Write my monthly report",
 ];
+
+const CHAT_KEY = "seller-assistant-chat";
+
+function loadChat(): ChatTurn[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CHAT_KEY) ?? "[]");
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveChat(turns: ChatTurn[]) {
+  try {
+    localStorage.setItem(CHAT_KEY, JSON.stringify(turns.slice(-40)));
+  } catch {
+    // Storage full or blocked: the chat still works, it just isn't kept.
+  }
+}
 
 type Notice = { kind: "password" } | { kind: "not_configured" } | { kind: "error"; text: string } | null;
 
@@ -24,10 +45,21 @@ export default function AssistantChat() {
   const [draft, setDraft] = useState("");
   const password = useRef("");
   const bottom = useRef<HTMLDivElement>(null);
+  const loaded = useRef(false);
 
   useEffect(() => {
     password.current = readPassword();
+    // Loaded after the first render, because the server can't see this device's saved chat.
+    const saved = loadChat();
+    queueMicrotask(() => {
+      loaded.current = true;
+      if (saved.length) setTurns(saved);
+    });
   }, []);
+
+  useEffect(() => {
+    if (loaded.current) saveChat(turns);
+  }, [turns]);
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -92,14 +124,29 @@ export default function AssistantChat() {
 
   return (
     <div className="flex flex-1 flex-col">
+      {turns.length > 0 && (
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              setTurns([]);
+              setNotice(null);
+            }}
+            className="rounded-full px-3 py-1.5 text-sm text-zinc-700 ring-1 ring-zinc-300 hover:bg-zinc-100 disabled:opacity-40 dark:text-zinc-300 dark:ring-zinc-700 dark:hover:bg-zinc-800"
+          >
+            New chat
+          </button>
+        </div>
+      )}
       <div className="flex-1 space-y-4 pb-4">
         {turns.length === 0 && (
           <div className="rounded-2xl bg-white p-5 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
             <h2 className="font-semibold">Hi! I&apos;m your manager.</h2>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Tell me a product to check, ask me to find deals or trends, or ask how your sales are going. My Deals
-              and Trends helper does the research, and I give you the answer with the profit and selling price
-              worked out. I never buy or send anything for you.
+              Ask me anything about your shop. My team checks products and prices, finds trending items and
+              baskets to buy, writes to suppliers, handles customers and writes your reports. I never buy or pay
+              for anything for you.
             </p>
             <div className="mt-4 flex flex-col gap-2">
               {SUGGESTIONS.map((s) => (
