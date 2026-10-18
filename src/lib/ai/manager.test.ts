@@ -18,6 +18,7 @@ describe("runManager", () => {
     expect(calls[0].output_config).toEqual({ effort: "medium" });
     expect(toolNames(calls[0].tools)).toEqual([
       "ask_deals_helper",
+      "ask_suppliers_helper",
       "get_sales_report",
       "suggest_price",
       "calculate_profit",
@@ -49,5 +50,19 @@ describe("runManager", () => {
       "Asking the Deals helper",
       "Deals helper searched: garlic press amazon uk price",
     ]);
+  });
+
+  it("hands supplier work to the Suppliers helper with its comparison tool", async () => {
+    const { client, calls } = fakeClient([textMessage("Done.")], [textMessage("Pick Good Co.")]);
+    const statuses: string[] = [];
+
+    await runManager(client, [{ role: "user", text: "Compare these suppliers" }], (s) => statuses.push(s));
+    const askSuppliers = calls[0].tools.find(
+      (t) => (t as { name: string }).name === "ask_suppliers_helper",
+    ) as BetaRunnableTool<{ task: string }>;
+
+    expect(await askSuppliers.run({ task: "Compare Good Co and Risky Ltd" })).toBe("Pick Good Co.");
+    expect(toolNames(calls[1].tools)).toEqual(["web_search", "compare_suppliers", "calculate_profit"]);
+    expect(statuses).toEqual(["Asking the Suppliers helper"]);
   });
 });

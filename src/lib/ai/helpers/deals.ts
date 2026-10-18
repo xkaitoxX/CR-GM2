@@ -1,7 +1,5 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import { BUSINESS_CONTEXT, webSearchTool } from "@/lib/ai/config";
-import { runHelper, type HelperSpec } from "@/lib/ai/helpers/run-helper";
-import type { StatusFn } from "@/lib/ai/run";
+import type { HelperSpec } from "@/lib/ai/helpers/run-helper";
 import { pricingTool } from "@/lib/ai/tools/pricing-tool";
 import { profitTool } from "@/lib/ai/tools/profit-tool";
 
@@ -38,8 +36,3 @@ export const DEALS_HELPER: HelperSpec = {
     [pricingTool.name]: "is working out the best selling price",
   },
 };
-
-/** Runs the Deals helper on one product check and returns its report. */
-export function runDealsHelper(client: Anthropic, task: string, onStatus: StatusFn = () => {}) {
-  return runHelper(client, DEALS_HELPER, task, onStatus);
-}
